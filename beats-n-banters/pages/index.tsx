@@ -27,6 +27,7 @@ const Home: React.FC = () => {
   return (
     <>
       <p>{text}</p>
+      <button onClick={fetchData}>Press me</button>
     </>
   );
 };
