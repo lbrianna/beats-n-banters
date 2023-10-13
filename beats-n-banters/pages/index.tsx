@@ -28,8 +28,8 @@ const Home: React.FC = () => {
     fetchData();
   }, []);
   //Fetching Spotify API
-  const CLIENT_ID = "22587a51ddb44d45ac62822b6013d144";
-  const CLIENT_SECRET = "c5f027bb1d9247908429d7d78f44d9f1";
+  const CLIENT_ID = process.env.API_KEY;
+  const CLIENT_SECRET = process.env.API_SECRET;
   function App() {
     useEffect(() => {
       //API Access Token
