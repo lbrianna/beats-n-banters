@@ -28,7 +28,7 @@ function App () {
   //Fetching Spotify API
   const CLIENT_ID = process.env.NEXT_PUBLIC_API_KEY;
   const CLIENT_SECRET = process.env.NEXT_PUBLIC_API_SECRET;
-
+  const [accessToken, setaccessToken] = useState("")
   useEffect(() => {
     //API Access Token
     var authParameters = {
@@ -40,20 +40,32 @@ function App () {
         "&client_secret=" +
         CLIENT_SECRET,
     };
-
     console.log(authParameters);
     fetch("https://accounts.spotify.com/api/token", authParameters)
       .then((result) => result.json())
-      .then((data) => console.log(data));
+      .then((data) => setaccessToken(data.access_token));
   }, []);
   
   //We need to: 1-Define a search function to look up every song name on spotify
   // 2- After song is found: add it to the playlist (additional helper function)
-  async function search(word: string) {}
+  async function search(word: string) {
+    //Get song with given word
+    var songParameters = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + accessToken
+      }
+    }
+    var songID = await fetch('https://api.spotify.com/v1/search?q=' + word + '&type=track&limit=50', songParameters)
+      .then(response => response.json())
+      .then(data => console.log(data))
+  }
   //Main
+  search("easiest")
   return (
     <>
-      <p></p>
+      <p>{text}</p>
       <button onClick={fetchData}>Press me</button>
     </>
   );
