@@ -3,7 +3,6 @@ const app = express();
 import querystring from "query-string";
 import request from "request";
 const PORT = 5001;
-
 var client_id = "22587a51ddb44d45ac62822b6013d144";
 var client_secret = "fcbdd00791b84d08a2acc6ff84e6513e";
 var redirect_uri = "http://localhost:5001/callback";
@@ -24,7 +23,7 @@ app.get("/login", function (req, res) {
   );
 });
 
-app.get("/callback", function (req, res) {
+app.get("/callback", async function (req, res) {
   var code = req.query.code || null;
   var state = req.query.state || null;
 
@@ -52,7 +51,7 @@ app.get("/callback", function (req, res) {
       json: true,
     };
   }
-  request.post(authOptions, function (error, response, body) {
+  request.post(authOptions, async function (error, response, body) {
     if (!error && response.statusCode === 200) {
       var access_token = body.access_token,
         refresh_token = body.refresh_token;
@@ -62,18 +61,19 @@ app.get("/callback", function (req, res) {
         headers: { Authorization: "Bearer " + access_token },
         json: true,
       };
-      console.log(body);
       // use the access token to access the Spotify Web API
-      request.get(options, function (error, response, body) {
-        console.log(body);
-      });
-      res.redirect(
-        "/#" +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token,
-          })
-      );
+      let userdata;
+      await fetch(options.url, {
+        method: "GET",
+        headers: options.headers,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          userdata = data;
+        });
+
+      let merged = { ...body, ...userdata };
+      res.send(merged);
     } else {
       res.redirect(
         "/#" +
