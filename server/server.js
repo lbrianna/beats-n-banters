@@ -2,12 +2,18 @@ import express from "express";
 const app = express();
 import querystring from "query-string";
 import request from "request";
+import cors from "cors";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
 const PORT = 5001;
 var client_id = "22587a51ddb44d45ac62822b6013d144";
 var client_secret = "fcbdd00791b84d08a2acc6ff84e6513e";
 var redirect_uri = "http://localhost:5001/callback";
 
-app.get("/login", function (req, res) {
+app.use(cors());
+
+app.get("/login", function (req, res, next) {
   var scope =
     "user-read-private user-read-email playlist-read-collaborative playlist-modify-public playlist-read-private playlist-modify-private";
   const state = "abcdefghijklmnop";
@@ -23,7 +29,7 @@ app.get("/login", function (req, res) {
   );
 });
 
-app.get("/callback", async function (req, res) {
+app.get("/callback", async function (req, res, next) {
   var code = req.query.code || null;
   var state = req.query.state || null;
 
@@ -72,8 +78,13 @@ app.get("/callback", async function (req, res) {
           userdata = data;
         });
 
-      let merged = { ...body, ...userdata };
-      res.send(merged);
+      // let merged = {
+      //   ...body,
+      //   ...userdata,
+      //   ...{ url: "http://localhost:3000" },
+      // };
+      // res.send(merged);
+      res.redirect("http://localhost:3000/redirect");
     } else {
       res.redirect(
         "/#" +

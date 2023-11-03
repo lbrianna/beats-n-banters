@@ -24,8 +24,9 @@ function App() {
 
   return (
     <>
-      <p>{text}</p>
-      <button onClick={fetchData}>Press me</button>
+      <a href="http://localhost:5001/login">
+        <button>Press me</button>
+      </a>
     </>
   );
 }
