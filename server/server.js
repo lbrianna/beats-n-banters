@@ -20,7 +20,7 @@ async function main() {
   console.log("Successful");
 }
 
-app.use(cors());
+app.use(cors({ origin: "*" }));
 
 app.get("/login", function (req, res, next) {
   var scope =
@@ -126,6 +126,62 @@ app.get("/callback", async function (req, res, next) {
       );
     }
   });
+});
+
+app.get("/playlist/:user/:title/:sentence", async function (req, res, next) {
+  const userdata = "mochiakku";
+  const tokens = await monmodel.findOne({ username: userdata }).exec();
+  //Start by creating playlist
+  const userr = req.params.user;
+  const titlePlaylist = req.params.title;
+  const sentence = req.params.sentence;
+  let playlistID;
+  let playlistLink;
+  request.post("/postPlaylist", async (req, res) => {
+    await fetch(`https://api.spotify.com/v1/users/${userr}/playlists`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + tokens.token,
+      },
+      data: {
+        name: titlePlaylist,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        playlistID = data.id;
+        playlistLink = data.external_urls;
+      });
+  });
+  //Iterate through each word in sentence
+  let arr = sentence.split("%");
+  for (let i = 0; i < arr.length; i++) {
+    //Search song
+    let songID;
+    request.get("/songID", async (req, res) => {
+      await fetch(
+        `https://api.spotify.com/v1/search?q=${arr[i]}&type=track&limit=1&offset=1`,
+        {
+          headers: { Authorization: "Bearer " + tokens.token },
+        }
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          songID = data.items.uri;
+        });
+    });
+    //Adding song to playlist
+    request.post("addSong", async (req, res) => {
+      await fetch(`https://api.spotify.com/v1/playlists/${playlistID}/tracks`, {
+        headers: {
+          Authorization: "Bearer " + tokens.token,
+          "Content-Type": "application/json",
+        },
+        data: { uris: [songID] },
+      });
+    });
+  }
+  res.send(playlistLink);
 });
 
 app.listen(PORT, () => {

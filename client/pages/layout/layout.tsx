@@ -17,9 +17,7 @@ const LayoutComponent = ({ children }: { children: React.ReactNode }) => {
           {children}
         </div>
       </Content>
-      <Footer style={{ textAlign: "center" }}>
-        Spark! ©2023 Created by Spark!
-      </Footer>{" "}
+      <Footer style={{ textAlign: "center" }}>Beats n banters CS411</Footer>{" "}
     </Layout>
   );
 };

@@ -11,10 +11,8 @@ const CustomHeader = () => {
     // label: string
     // href: string (route path)
     { key: "0", label: "Home", href: "/" },
-    { key: "1", label: "News", href: "/news" },
-    { key: "2", label: "About", href: "/about" },
+    { key: "1", label: "About", href: "/about" },
   ];
-  // Don't touch this code, use it in your Menu component from Antd
   const router = useRouter();
   const selectedKey = menuItems
     .findIndex((item) => item.href === router.pathname)
