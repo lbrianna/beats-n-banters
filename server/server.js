@@ -20,7 +20,16 @@ async function main() {
   console.log("Successful");
 }
 
-app.use(cors({ origin: "*" }));
+const corsOptions = {
+  origin: "http://localhost:3000", // Update with your React app's origin
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+  optionsSuccessStatus: 204,
+  headers: {
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  },
+};
+app.use(cors());
+app.options("*", cors()); // include before other routes
 
 app.get("/login", function (req, res, next) {
   var scope =
@@ -65,10 +74,10 @@ app.get("/callback", async function (req, res, next) {
         grant_type: "authorization_code",
       },
       headers: {
-        "content-type": "application/x-www-form-urlencoded",
         Authorization:
           "Basic " +
           new Buffer.from(client_id + ":" + client_secret).toString("base64"),
+        "content-type": "application/x-www-form-urlencoded",
       },
       json: true,
     };
@@ -80,7 +89,9 @@ app.get("/callback", async function (req, res, next) {
 
       var options = {
         url: "https://api.spotify.com/v1/me",
-        headers: { Authorization: "Bearer " + access_token },
+        headers: {
+          Authorization: "Bearer " + access_token,
+        },
         json: true,
       };
       // use the access token to access the Spotify Web API
@@ -93,6 +104,7 @@ app.get("/callback", async function (req, res, next) {
         .then((data) => {
           userdata = data;
         });
+
       //Look for username
       if (await monmodel.findOne({ username: userdata.id }).exec()) {
         let user = userdata.id;
@@ -129,59 +141,74 @@ app.get("/callback", async function (req, res, next) {
 });
 
 app.get("/playlist/:user/:title/:sentence", async function (req, res, next) {
-  const userdata = "mochiakku";
-  const tokens = await monmodel.findOne({ username: userdata }).exec();
   //Start by creating playlist
   const userr = req.params.user;
+  const tokens = await monmodel.findOne({ username: userr }).exec();
   const titlePlaylist = req.params.title;
   const sentence = req.params.sentence;
+
+  const playlistData = { name: titlePlaylist };
+
   let playlistID;
   let playlistLink;
-  request.post("/postPlaylist", async (req, res) => {
-    await fetch(`https://api.spotify.com/v1/users/${userr}/playlists`, {
+
+  console.log("token", tokens.token);
+  const rawResponse = await fetch(
+    `https://api.spotify.com/v1/users/mochiakku/playlists`,
+    {
+      method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: "Bearer " + tokens.token,
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      data: {
-        name: titlePlaylist,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        playlistID = data.id;
-        playlistLink = data.external_urls;
-      });
-  });
-  //Iterate through each word in sentence
-  let arr = sentence.split("%");
-  for (let i = 0; i < arr.length; i++) {
-    //Search song
-    let songID;
-    request.get("/songID", async (req, res) => {
-      await fetch(
-        `https://api.spotify.com/v1/search?q=${arr[i]}&type=track&limit=1&offset=1`,
-        {
-          headers: { Authorization: "Bearer " + tokens.token },
-        }
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          songID = data.items.uri;
-        });
-    });
-    //Adding song to playlist
-    request.post("addSong", async (req, res) => {
-      await fetch(`https://api.spotify.com/v1/playlists/${playlistID}/tracks`, {
-        headers: {
-          Authorization: "Bearer " + tokens.token,
-          "Content-Type": "application/json",
-        },
-        data: { uris: [songID] },
-      });
-    });
+      body: '{ "name": "moshpit5000 hardcoded" }',
+    }
+  );
+
+  if (!rawResponse.ok) {
+    // Handle error
+    console.error(`Error: ${rawResponse.status} - ${rawResponse.statusText}`);
+    res.status(rawResponse.status).send("Error creating playlist");
+  } else {
+    const response = await rawResponse.json();
+    console.log("response", response);
+    res.send(response);
   }
-  res.send(playlistLink);
+
+  // //Iterate through each word in sentence
+  // let arr = sentence.split(" ");
+
+  // for (let i = 0; i < arr.length; i++) {
+  //   //Search song
+  //   let songID;
+
+  //   await fetch(
+  //     `https://api.spotify.com/v1/search?q=${arr[i]}&type=track&limit=10&offset=10`,
+  //     {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: "Bearer " + tokens.token,
+  //       },
+  //     }
+  //   )
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       songID = data.tracks.items[0].uri;
+  //     });
+
+  //   //Adding song to playlist
+
+  //   await fetch(`https://api.spotify.com/v1/playlists/${playlistID}/tracks`, {
+  //     method: "POST",
+  //     headers: {
+  //       Authorization: "Bearer " + tokens.token,
+  //     },
+  //     data: { uris: [songID] },
+  //   });
+  // }
+  // console.log(playlistLink);
+  // res.send(playlistLink);
 });
 
 app.listen(PORT, () => {
