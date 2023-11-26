@@ -26,6 +26,7 @@ const corsOptions = {
   optionsSuccessStatus: 204,
   headers: {
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Origin": "http://localhost:3000",
   },
 };
 app.use(cors());
@@ -46,6 +47,7 @@ app.get("/login", function (req, res, next) {
       })
   );
 });
+
 //Schema
 const sch = {
   token: String,
@@ -147,68 +149,61 @@ app.get("/playlist/:user/:title/:sentence", async function (req, res, next) {
   const titlePlaylist = req.params.title;
   const sentence = req.params.sentence;
 
-  const playlistData = { name: titlePlaylist };
-
   let playlistID;
   let playlistLink;
 
-  console.log("token", tokens.token);
-  const rawResponse = await fetch(
-    `https://api.spotify.com/v1/users/mochiakku/playlists`,
-    {
-      method: "POST",
+  const postOptions = {
+    url: `https://api.spotify.com/v1/users/${userr}/playlists`,
+    body: JSON.stringify({ name: titlePlaylist, public: false }),
+    dataType: "json",
+    headers: {
+      Authorization: "Bearer " + tokens.token,
+      "Content-Type": "application/json",
+    },
+  };
+
+  request.post(postOptions, function (error, response, body) {
+    const results = JSON.parse(body);
+    playlistID = results.id;
+    playlistLink = results.external_urls.spotify;
+  });
+
+  //Iterate through each word in sentence
+  let arr = sentence.split(" ");
+
+  for (let i = 0; i < arr.length; i++) {
+    //Search song
+    let songID;
+
+    await fetch(
+      `https://api.spotify.com/v1/search?q=${arr[i]}&type=track&limit=10&offset=10`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + tokens.token,
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        songID = data.tracks.items[0].uri;
+      });
+
+    //Adding song to playlist
+    const postParams = {
+      url: `https://api.spotify.com/v1/playlists/${playlistID}/tracks`,
+      body: JSON.stringify({ uris: [songID] }),
+      dataType: "json",
       headers: {
         Authorization: "Bearer " + tokens.token,
         "Content-Type": "application/json",
-        Accept: "application/json",
       },
-      body: '{ "name": "moshpit5000 hardcoded" }',
-    }
-  );
+    };
 
-  if (!rawResponse.ok) {
-    // Handle error
-    console.error(`Error: ${rawResponse.status} - ${rawResponse.statusText}`);
-    res.status(rawResponse.status).send("Error creating playlist");
-  } else {
-    const response = await rawResponse.json();
-    console.log("response", response);
-    res.send(response);
+    request.post(postParams, function (error, response, body) {});
   }
 
-  // //Iterate through each word in sentence
-  // let arr = sentence.split(" ");
-
-  // for (let i = 0; i < arr.length; i++) {
-  //   //Search song
-  //   let songID;
-
-  //   await fetch(
-  //     `https://api.spotify.com/v1/search?q=${arr[i]}&type=track&limit=10&offset=10`,
-  //     {
-  //       method: "GET",
-  //       headers: {
-  //         Authorization: "Bearer " + tokens.token,
-  //       },
-  //     }
-  //   )
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       songID = data.tracks.items[0].uri;
-  //     });
-
-  //   //Adding song to playlist
-
-  //   await fetch(`https://api.spotify.com/v1/playlists/${playlistID}/tracks`, {
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: "Bearer " + tokens.token,
-  //     },
-  //     data: { uris: [songID] },
-  //   });
-  // }
-  // console.log(playlistLink);
-  // res.send(playlistLink);
+  res.redirect(playlistLink);
 });
 
 app.listen(PORT, () => {

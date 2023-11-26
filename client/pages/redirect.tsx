@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
+import request from "request";
 
 function App() {
   let i = 0;
-
+  let quoteResult;
   useEffect(() => {
     if (i === 0) {
       getQuote();
@@ -24,7 +25,6 @@ function App() {
 
           let username: string;
           let title: string;
-
           if (userData) {
             username = userData[0];
             title = userData[1];
@@ -41,14 +41,16 @@ function App() {
     title: string;
     text: string;
   }
-
+  let links;
   const fetchApp = async ({ username, title, text }: FetchAppParams) => {
+    const getParams = {
+      url: `http://localhost:5001/playlist/${username}/${title}/${text}`,
+    };
     try {
       await fetch(
         `http://localhost:5001/playlist/${username}/${title}/${text}`,
         {
           method: "GET",
-          // headers: { "Content-Type": "application/json" },
         }
       )
         .then((response) => response.json())
@@ -62,7 +64,8 @@ function App() {
 
   return (
     <>
-      <p>Hello</p>
+      <p>Your Random Playlist has been generated</p>
+      <p>Please Check your spotify account</p>
     </>
   );
 }
