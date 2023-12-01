@@ -199,12 +199,13 @@ app.get("/playlist/:user/:title/:sentence", async function (req, res, next) {
         "Content-Type": "application/json",
       },
     };
-
     request.post(postParams, function (error, response, body) {});
   }
 
   res.redirect(playlistLink);
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);

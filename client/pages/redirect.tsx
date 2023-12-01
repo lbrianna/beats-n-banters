@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
-import request from "request";
 
 function App() {
   let i = 0;
-  let quoteResult;
+  const [quote, setQuote] = useState("");
   useEffect(() => {
     if (i === 0) {
       getQuote();
     }
   }, [i]);
-
   // Fetching Techy API
   const getQuote = async () => {
     i = 1;
@@ -22,7 +20,6 @@ function App() {
           // Retrieve user data from localStorage
           const userDataString = localStorage.getItem("userData");
           const userData = userDataString ? JSON.parse(userDataString) : null;
-
           let username: string;
           let title: string;
           if (userData) {
@@ -41,7 +38,6 @@ function App() {
     title: string;
     text: string;
   }
-  let links;
   const fetchApp = async ({ username, title, text }: FetchAppParams) => {
     const getParams = {
       url: `http://localhost:5001/playlist/${username}/${title}/${text}`,
@@ -58,6 +54,7 @@ function App() {
           console.log(data);
         });
     } catch (err) {
+      setQuote(text);
       console.log(err);
     }
   };
@@ -65,6 +62,9 @@ function App() {
   return (
     <>
       <p>Your Random Playlist has been generated</p>
+      <p style={{ color: "green" }}>
+        The playlist was based on the following quote: {quote}
+      </p>
       <p>Please Check your spotify account</p>
     </>
   );
